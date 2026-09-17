@@ -57,11 +57,14 @@ See `.env.example`.
 }
 ```
 
-## Tools (2)
+## Tools (5)
 
 | Tool | Description |
 |---|---|
 | `testit_search_cases` | Find test cases by name substring. Args: `query` (required), `take` (default 10). Returns lines `globalId \| name \| uuid`. |
 | `testit_get_case` | Read a full test case by UUID: name, description, preconditions, steps (action / test data / expected), postconditions as markdown. |
+| `testit_stats_coverage` | Case stats: current manual/automated split + automation %, and cases created in the period. Args: `projectId?`, `from?`, `to?` (`YYYY-MM-DD` or ISO 8601). |
+| `testit_stats_autotests` | Autotests created in the period with last-run outcome breakdown. Args: `projectId?`, `from?`, `to?`. |
+| `testit_stats_runs` | Test runs in the period with per-run outcomes and total passed/failed/blocked/skipped. Args: `projectId?`, `from?`, `to?`. |
 
 Typical flow: `testit_search_cases` to locate a case, then `testit_get_case` for its steps.
