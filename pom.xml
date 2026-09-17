@@ -36,6 +36,13 @@
             <artifactId>testit-api-client</artifactId>
             <version>${testit.client.version}</version>
         </dependency>
+        <!-- Нужен только для JSON().getMapper(): класс invoker.JSON реализует jakarta.ws.rs интерфейс,
+             а jersey у api-client в runtime-scope -->
+        <dependency>
+            <groupId>jakarta.ws.rs</groupId>
+            <artifactId>jakarta.ws.rs-api</artifactId>
+            <version>3.1.0</version>
+        </dependency>
         <!-- Единая версия Jackson 2.x для всего сервера (mcp-json-jackson2 хочет 2.21.1).
              Пиним все три артефакта: api-client тянет core/annotations 2.17.1 своей веткой -->
         <dependency>

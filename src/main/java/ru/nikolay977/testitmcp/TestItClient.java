@@ -46,10 +46,23 @@ public class TestItClient {
     private final AutoTestsApi autoTestsApi;
     private final TestRunsApi testRunsApi;
     private final UUID projectId;
+    private final String url;
+    private final String token;
+    private TestItQueries queries;
+
+    /** Read-модель всех остальных ручек TestIT (проекты, планы, прогоны, ...). */
+    public synchronized TestItQueries queries() {
+        if (queries == null) {
+            queries = new TestItQueries(url, token, projectId);
+        }
+        return queries;
+    }
 
     public TestItClient() {
         String url = requiredEnv("TESTIT_URL");
         String token = requiredEnv("TESTIT_TOKEN");
+        this.url = url.trim();
+        this.token = token.trim();
         String projectIdRaw = System.getenv("TESTIT_PROJECT_ID");
         this.projectId = (projectIdRaw == null || projectIdRaw.isBlank()) ? null : UUID.fromString(projectIdRaw.trim());
 

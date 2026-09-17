@@ -9,8 +9,8 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import com.fasterxml.jackson.databind.json.JsonMapper;
 
+import java.util.ArrayList;
 import java.util.List;
-import java.util.Map;
 import java.util.Map;
 
 /**
@@ -20,9 +20,9 @@ import java.util.Map;
  * Tools:
  * - testit_search_cases {query, take?} — поиск кейсов по названию
  * - testit_get_case {id} — полный кейс со шагами в markdown
- * - testit_stats_coverage {projectId?, from?, to?} — ручные/авто кейсы: срез и созданные за период
- * - testit_stats_autotests {projectId?, from?, to?} — автотесты за период + исходы последних запусков
- * - testit_stats_runs {projectId?, from?, to?} — прогоны за период с суммарными исходами
+ * - testit_stats_coverage / testit_stats_autotests / testit_stats_runs — статистика для менеджера
+ * - testit_* — все read-ручки TestIT: проекты, секции, конфигурации, теги, статусы,
+ *   тест-планы, сьюты, поинты, результаты, кейсы, автотесты, прогоны, вложения, атрибуты, параметры
  */
 public class TestItMcpServer {
 
@@ -33,14 +33,19 @@ public class TestItMcpServer {
         JacksonMcpJsonMapper jsonMapper = new JacksonMcpJsonMapper(JsonMapper.builder().build());
         var transport = new StdioServerTransportProvider(jsonMapper);
 
+        List<McpServerFeatures.SyncToolSpecification> tools = new ArrayList<>(List.of(
+                searchCasesTool(jsonMapper, testIt), getCaseTool(jsonMapper, testIt),
+                coverageTool(jsonMapper, testIt), autotestsTool(jsonMapper, testIt), runsTool(jsonMapper, testIt)));
+        tools.addAll(QueryTools.all(jsonMapper, testIt));
+
         McpServer.sync(transport)
-                .serverInfo("testit-mcp", "1.0.0")
-                .instructions("Чтение тест-кейсов TestIT для написания Playwright-автотестов и статистика. " +
-                        "Сначала testit_search_cases для поиска, затем testit_get_case для шагов кейса. " +
-                        "Для статистики менеджера: testit_stats_coverage, testit_stats_autotests, testit_stats_runs.")
+                .serverInfo("testit-mcp", "1.1.0")
+                .instructions("Полный доступ на чтение к TestIT. Кейсы: testit_search_cases, затем testit_get_case. " +
+                        "Статистика менеджера: testit_stats_coverage, testit_stats_autotests, testit_stats_runs, " +
+                        "testit_testplan_analytics, testit_results_statistics. " +
+                        "Остальное: testit_* инструменты по доменам (проекты, планы, сьюты, поинты, результаты, прогоны).")
                 .capabilities(McpSchema.ServerCapabilities.builder().tools(true).build())
-                .tools(List.of(searchCasesTool(jsonMapper, testIt), getCaseTool(jsonMapper, testIt),
-                        coverageTool(jsonMapper, testIt), autotestsTool(jsonMapper, testIt), runsTool(jsonMapper, testIt)))
+                .tools(tools)
                 .build();
 
         log.info("testit-mcp started, waiting for MCP client on stdio");
@@ -148,7 +153,7 @@ public class TestItMcpServer {
         return v == null ? null : v.toString();
     }
 
-    private static McpSchema.CallToolResult callSafely(ThrowingSupplier<String> action) {
+    static McpSchema.CallToolResult callSafely(ThrowingSupplier<String> action) {
         try {
             String text = action.get();
             return McpSchema.CallToolResult.builder()
@@ -164,7 +169,7 @@ public class TestItMcpServer {
     }
 
     @FunctionalInterface
-    private interface ThrowingSupplier<T> {
+    interface ThrowingSupplier<T> {
         T get() throws Exception;
     }
 }
